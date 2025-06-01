@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Connection Tracker</title>
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+  <div class="container">
+    <h2>LinkedIn Connection Tracker</h2>
+    <form id="connection-form">
+      <label for="profileUrl">Profile URL</label>
+      <input type="text" id="profileUrl" name="profileUrl" readonly />
+
+      <label for="howKnown">How do you know this person?</label>
+      <textarea id="howKnown" name="howKnown" placeholder="E.g. Met at conference, former colleague..." rows="2"></textarea>
+
+      <label for="notes">Notes</label>
+      <textarea id="notes" name="notes" placeholder="E.g. Asked for referral on May 30" rows="3"></textarea>
+
+      <button type="submit">Save Connection</button>
+    </form>
+
+    <h3>Saved Connections</h3>
+    <ul id="connections-list"></ul>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
