@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "LinkedIn Connection Tracker",
+  "name": "Connection Tracker",
   "version": "1.0",
   "description": "Track your LinkedIn connections and notes locally.",
   "permissions": [

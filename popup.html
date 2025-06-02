@@ -8,14 +8,15 @@
 </head>
 <body>
   <div class="container">
-    <h2>LinkedIn Connection Tracker</h2>
+    <h1>Connection Tracker</h1>
     <form id="connection-form">
+      <!-- Profile URL (readonly) -->
       <label for="profileUrl">Profile URL</label>
       <input type="text" id="profileUrl" name="profileUrl" readonly />
 
-      <label for="howKnown">How do you know this person?</label>
-      <textarea id="howKnown" name="howKnown" placeholder="E.g. Met at conference, former colleague..." rows="2"></textarea>
+      
 
+      <!-- Notes (user can still type freeform) -->
       <label for="notes">Notes</label>
       <textarea id="notes" name="notes" placeholder="E.g. Asked for referral on May 30" rows="3"></textarea>
 
@@ -24,6 +25,16 @@
 
     <h3>Saved Connections</h3>
     <ul id="connections-list"></ul>
+  </div>
+
+  <button id="delete-all-btn" class="delete-all-btn">Delete All <br>Saved Connections</button>
+
+  <!-- Toast container -->
+  <div id="toast-container"></div>
+
+
+  <div class="footer-container">
+    <p>The app was created with ❤️ by:<a href="https://www.linkedin.com/in/petar-skrbic/" target="_blank">Petar Škrbić</a></p>
   </div>
 
   <script src="popup.js"></script>

@@ -1,38 +1,94 @@
+// ────────────────────────────────────────────────────────────────────────────
+// 1) ELEMENT REFERENCES & STATE
+// ────────────────────────────────────────────────────────────────────────────
 const profileUrlInput = document.getElementById('profileUrl');
-const howKnownInput = document.getElementById('howKnown');
-const notesInput = document.getElementById('notes');
-const form = document.getElementById('connection-form');
+const notesInput      = document.getElementById('notes');
+const form            = document.getElementById('connection-form');
 const connectionsList = document.getElementById('connections-list');
 
-let connections = [];
-let editingIndex = null;
+let connections         = [];
+let editingIndex        = null;
+// holds the name of the currently loaded LinkedIn profile
+let currentProfileName  = '';
 
-// Get LinkedIn profile URL from active tab if URL matches LinkedIn profile pattern
-async function getLinkedInProfileUrl() {
-  let [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-  const url = tab?.url || '';
-  const linkedInProfileRegex = /^https:\/\/www\.linkedin\.com\/in\/[a-zA-Z0-9\-_%]+\/?$/;
-  if (linkedInProfileRegex.test(url)) {
+// ────────────────────────────────────────────────────────────────────────────
+// 2) SHOW TOAST (replace alert/confirm)
+// ────────────────────────────────────────────────────────────────────────────
+function showToast(message, type = 'success') {
+  const container = document.getElementById('toast-container');
+  const toast     = document.createElement('div');
+  toast.className = `toast ${type}`;
+  toast.textContent = message;
+  container.appendChild(toast);
+
+  setTimeout(() => {
+    toast.remove();
+  }, 3500);
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// 3) GET LINKEDIN PROFILE URL & NAME
+// ────────────────────────────────────────────────────────────────────────────
+async function getLinkedInProfileInfo() {
+  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  const url   = tab?.url || '';
+  // match only /in/username/ pages
+  const regex = /^https:\/\/www\.linkedin\.com\/in\/[a-zA-Z0-9\-_%]+\/?$/;
+
+  if (regex.test(url)) {
     profileUrlInput.value = url;
+
+    // Inject script to grab the <h1> text (profile name)
+    chrome.scripting.executeScript(
+      {
+        target: { tabId: tab.id },
+        func: () => {
+          const h1 = document.querySelector('h1');
+          return h1 ? h1.innerText.trim() : '';
+        }
+      },
+      (injectionResults) => {
+        if (
+          injectionResults &&
+          Array.isArray(injectionResults) &&
+          injectionResults[0] &&
+          typeof injectionResults[0].result === 'string'
+        ) {
+          currentProfileName = injectionResults[0].result || '';
+        } else {
+          currentProfileName = '';
+        }
+      }
+    );
   } else {
-    profileUrlInput.value = '';
+    // Not on a valid LinkedIn-in-page
+    profileUrlInput.value     = '';
+    currentProfileName        = '';
   }
 }
 
-// Load saved connections from chrome.storage.local
+// ────────────────────────────────────────────────────────────────────────────
+// 4) LOAD & SAVE FUNCTIONS
+// ────────────────────────────────────────────────────────────────────────────
 function loadConnections() {
   chrome.storage.local.get(['connections'], (result) => {
-    connections = result.connections || [];
+    // If existing entries only have profileUrl & notes (older format), default profileName to empty string
+    connections = (result.connections || []).map(conn => ({
+      profileUrl:  conn.profileUrl,
+      profileName: conn.profileName || '',
+      notes:       conn.notes || ''
+    }));
     renderConnections();
   });
 }
 
-// Save connections array to chrome.storage.local
 function saveConnections() {
   chrome.storage.local.set({ connections });
 }
 
-// Render the saved connections list in the popup
+// ────────────────────────────────────────────────────────────────────────────
+// 5) RENDER THE SAVED CONNECTIONS
+// ────────────────────────────────────────────────────────────────────────────
 function renderConnections() {
   connectionsList.innerHTML = '';
 
@@ -42,12 +98,14 @@ function renderConnections() {
   }
 
   connections.forEach((conn, index) => {
+    const displayName = conn.profileName || conn.profileUrl;
     const li = document.createElement('li');
     li.className = 'connection-item';
 
     li.innerHTML = `
-      <a href="${conn.profileUrl}" target="_blank" rel="noopener noreferrer">${conn.profileUrl}</a>
-      <div><strong>How known:</strong> ${conn.howKnown || '<em>None</em>'}</div>
+      <a href="${conn.profileUrl}" target="_blank" rel="noopener noreferrer">
+        ${displayName}
+      </a>
       <div class="notes"><strong>Notes:</strong> ${conn.notes || '<em>None</em>'}</div>
       <div class="buttons">
         <button class="edit-btn" data-index="${index}">Edit</button>
@@ -58,7 +116,7 @@ function renderConnections() {
     connectionsList.appendChild(li);
   });
 
-  // Add event listeners for edit and delete buttons
+  // Attach edit/delete handlers
   document.querySelectorAll('.edit-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       startEditConnection(parseInt(btn.dataset.index, 10));
@@ -71,62 +129,98 @@ function renderConnections() {
   });
 }
 
-// Add or update a connection
+// ────────────────────────────────────────────────────────────────────────────
+// 6) ADD OR UPDATE A CONNECTION
+// ────────────────────────────────────────────────────────────────────────────
 function addOrUpdateConnection(event) {
   event.preventDefault();
 
-  const profileUrl = profileUrlInput.value.trim();
-  const howKnown = howKnownInput.value.trim();
-  const notes = notesInput.value.trim();
+  const profileUrl   = profileUrlInput.value.trim();
+  const notes        = notesInput.value.trim();
+  const profileName  = currentProfileName.trim();
 
   if (!profileUrl) {
-    alert('Please open a LinkedIn profile page to save.');
+    showToast('Please open a LinkedIn profile page to save.', 'error');
     return;
   }
 
   if (editingIndex !== null) {
-    // Update existing
-    connections[editingIndex] = { profileUrl, howKnown, notes };
+    // UPDATE existing entry
+    connections[editingIndex] = { profileUrl, profileName, notes };
     editingIndex = null;
+    showToast('Connection updated.', 'success');
   } else {
-    // Check duplicates
+    // CHECK duplicate
     if (connections.some(c => c.profileUrl === profileUrl)) {
-      alert('This profile is already saved.');
+      showToast('This profile is already saved.', 'error');
       return;
     }
-    connections.push({ profileUrl, howKnown, notes });
+    connections.push({ profileUrl, profileName, notes });
+    showToast('Connection saved successfully!', 'success');
   }
 
   saveConnections();
   renderConnections();
   form.reset();
-  profileUrlInput.value = profileUrl;
-  howKnownInput.focus();
+  // Preserve the URL field so user can see it, but clear name
+  profileUrlInput.value     = profileUrl;
+  currentProfileName        = profileName;
 }
 
-// Prepare form for editing a connection
+// ────────────────────────────────────────────────────────────────────────────
+// 7) START EDITING A CONNECTION
+// ────────────────────────────────────────────────────────────────────────────
 function startEditConnection(index) {
   const conn = connections[index];
-  profileUrlInput.value = conn.profileUrl;
-  howKnownInput.value = conn.howKnown;
-  notesInput.value = conn.notes;
-  editingIndex = index;
+  profileUrlInput.value    = conn.profileUrl;
+  notesInput.value         = conn.notes;
+  currentProfileName       = conn.profileName;
+  editingIndex             = index;
 }
 
-// Delete a connection
+// ────────────────────────────────────────────────────────────────────────────
+// 8) DELETE A CONNECTION
+// ────────────────────────────────────────────────────────────────────────────
 function deleteConnection(index) {
   if (confirm('Delete this connection?')) {
     connections.splice(index, 1);
     saveConnections();
     renderConnections();
+    showToast('Connection deleted.', 'success');
   }
 }
 
-// Initialize extension popup
+// ────────────────────────────────────────────────────────────────────────────
+// 9) INITIALIZE POPUP
+// ────────────────────────────────────────────────────────────────────────────
 function init() {
-  getLinkedInProfileUrl();
+  getLinkedInProfileInfo();
   loadConnections();
   form.addEventListener('submit', addOrUpdateConnection);
+
+  // If you switch tabs or reload LinkedIn, re-fetch name/URL whenever popup opens
+  chrome.tabs.onActivated.addListener(getLinkedInProfileInfo);
+  chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+    if (changeInfo.status === 'complete') {
+      getLinkedInProfileInfo();
+    }
+  });
 }
 
 init();
+
+
+document.getElementById('delete-all-btn').addEventListener('click', deleteAllConnections);
+function deleteAllConnections() {
+  if (connections.length === 0) {
+    showToast('No connections to delete.', 'error');
+    return;
+  }
+
+  if (confirm('Are you sure you want to delete all saved connections?')) {
+    connections = [];
+    saveConnections();
+    renderConnections();
+    showToast('All connections deleted.', 'success');
+  }
+}

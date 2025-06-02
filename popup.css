@@ -4,18 +4,20 @@ body {
   color: #222;
   margin: 0;
   padding: 15px;
-  width: 350px;
+  width: 450px;
+  
+  overflow-y: auto;
 }
 
 .container {
-  max-width: 350px;
+  max-width: 450px;
 }
 
-h2 {
+h1 {
   margin-top: 0;
-  color: #0a66c2;
+  
   font-weight: 700;
-  font-size: 1.5em;
+  font-size: 1.8em;
   text-align: center;
 }
 
@@ -28,7 +30,7 @@ form {
 
 label {
   font-weight: 600;
-  font-size: 0.9em;
+  font-size: 1.4em;
   color: #444;
 }
 
@@ -37,7 +39,7 @@ textarea {
   border: 1px solid #ccc;
   border-radius: 4px;
   padding: 6px 8px;
-  font-size: 0.9em;
+  font-size: 1.4em;
   resize: vertical;
   background-color: #fff;
 }
@@ -64,11 +66,11 @@ button:hover {
 }
 
 h3 {
-  color: #0a66c2;
+  
   border-bottom: 1px solid #ccc;
   padding-bottom: 5px;
   margin-bottom: 8px;
-  font-weight: 600;
+  
   font-size: 1.2em;
 }
 
@@ -85,7 +87,7 @@ h3 {
   padding: 10px;
   margin-bottom: 8px;
   box-shadow: 0 1px 4px rgba(0,0,0,0.1);
-  font-size: 0.9em;
+  font-size: 1.2em;
 }
 
 .connection-item a {
@@ -117,9 +119,9 @@ h3 {
 }
 
 .edit-btn {
-  background-color: #ffc107;
+  background-color: #ff8800;
   border: none;
-  color: #222;
+  color: #ffffff;
   cursor: pointer;
 }
 
@@ -128,4 +130,86 @@ h3 {
   border: none;
   color: white;
   cursor: pointer;
+}
+
+
+#toast-container {
+  position: fixed;
+  bottom: 10px;
+  left: 10px;
+  right: 10px;
+  z-index: 9999;
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.toast {
+  background-color: #333;
+  color: #fff;
+  padding: 10px 16px;
+  border-radius: 6px;
+  font-size: 1.1em;
+  max-width: 300px;
+  text-align: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  opacity: 0;
+  transform: translateY(20px);
+  animation: slideIn 0.3s ease-out forwards, fadeOut 0.3s ease-in 3s forwards;
+}
+
+.toast.success {
+  background-color: #28a745;
+}
+
+.toast.error {
+  background-color: #dc3545;
+}
+
+@keyframes slideIn {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeOut {
+  to {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+}
+
+/* Footer */
+.footer-container {
+  
+  color: #000000;
+  text-align: center;
+  
+  font-size: 0.9rem;
+}
+
+  .footer-container a {
+  color: #003cff;
+  text-decoration: none;
+  margin: 0 0.5rem;
+}
+
+.footer-container a:hover {
+  color: rgb(0, 204, 255);
+}
+
+
+.delete-all-btn {
+  margin-top: 10px;
+  background-color: #d9534f;
+  color: white;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.delete-all-btn:hover {
+  background-color: #c9302c;
 }
